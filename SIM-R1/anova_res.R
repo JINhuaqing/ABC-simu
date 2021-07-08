@@ -2,7 +2,8 @@
 library(dplyr)
 
 setwd("C:/Users/Dell/Documents/ProjectCode/MCA/SIM-R1")
-res <- read.csv("./result4ANOVA_SIM_R1.csv")
+setwd("C:/Users/JINHU/Documents/ProjectCode/MCA/SIM-R1")
+res <- read.csv("./result4ANOVA_SIM_R1B.csv")
 res <- res[, -5]
 names(res) <- c("Targets", "nLevels", "delta", "DiffProbs", "SS", "Y")
 
@@ -36,7 +37,7 @@ rnorm(10000) %>% density %>% lines(col="red")
 dat <- group_by(res, DiffProbs, delta)
 tb <- summarise(dat, Y=mean(Y))
 tb
-x.vs <- c(0, 0.05, 0.1, 0.15, 0.2, 0.3)
+x.vs <- c(0, 0.05, 0.1, 0.15, 0.2, 0.25)
 
 plot(x.vs, tb$Y[tb$DiffProbs==0.05], ylim=c(0.2, 0.8), type="l", ylab = "Prob Diff", xlab=expression(delta))
 for (dp in c(0.07, 0.1, 0.15)){
