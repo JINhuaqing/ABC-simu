@@ -6,12 +6,14 @@ library(grid)
 
 # check overdose
 overdose.fn <- function(phi, add.args=list()){
+    cutoff.eli <- add.args$cutoff.eli
+    cutoff.num <- add.args$cutoff.num
     y <- add.args$y
     n <- add.args$n
     alp.prior <- add.args$alp.prior
     bet.prior <- add.args$bet.prior
     pp <- post.prob.fn(phi, y, n, alp.prior, bet.prior)
-    if ((pp >= 0.95) & (n>=3)){
+    if ((pp >= cutoff.eli) & (n>=cutoff.num)){
         return(TRUE)
     }else{
         return(FALSE)

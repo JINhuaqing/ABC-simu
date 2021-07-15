@@ -54,12 +54,16 @@ MCA.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     tys <- rep(0, ndose) # number of responses for different doses.
     tns <- rep(0, ndose) # number of subject for different doses.
     tover.doses <- rep(0, ndose) # Whether each dose is overdosed or not, 1 yes
+    #pss <- lapply(1:ndose, function(k)gen.mu.rand(k, J=add.args$J, K=ndose, phi=phi, delta=add.args$delta))
 
     
     
     
     
     for (i in 1:ncohort){
+        if (i == ncohort){
+             cohortsize <- 1
+        }
         pc <- p.true[cidx] 
         
         # sample from current dose
@@ -126,11 +130,16 @@ MCA2.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     tys <- rep(0, ndose) # number of responses for different doses.
     tns <- rep(0, ndose) # number of subject for different doses.
     tover.doses <- rep(0, ndose) # Whether each dose is overdosed or not, 1 yes
+    #pss <- lapply(1:ndose, function(k)gen.mu.rand(k, J=add.args$J, K=ndose, phi=phi, delta=add.args$delta))
     
     
     
     
     for (i in 1:ncohort){
+        if (i == ncohort){
+             cohortsize <- 1
+        }
+
         pc <- p.true[cidx] 
         
         # sample from current dose

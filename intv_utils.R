@@ -1,4 +1,4 @@
-intv.simu.fn <- function(target, p.true, ncohort, cohortsize, init.level=1, design=5, cutoff.eli=0.95)
+intv.simu.fn <- function(target, p.true, ncohort, cohortsize, init.level=1, design=5, cutoff.eli=0.98)
 {	 	
   ### simple error checking
   if(sum(seq(1,5)==design)==0) 
@@ -6,7 +6,7 @@ intv.simu.fn <- function(target, p.true, ncohort, cohortsize, init.level=1, desi
 
   ####################################################################################################
   ## to make get.oc as self-contained function, we copied functions get.boundary() and select.mtd() here.
-  get.boundary <- function(target, ncohort, cohortsize=3,design=1,cutoff.eli=0.95)
+  get.boundary <- function(target, ncohort, cohortsize=3,design=1,cutoff.eli=0.98)
   {
     density1 <- function(p, n, m1, m2) {pbinom(m1, n, p)+1-pbinom(m2-1, n, p);}
     density2 <- function(p, n, m1) {1-pbinom(m1, n, p)};
@@ -89,7 +89,9 @@ intv.simu.fn <- function(target, p.true, ncohort, cohortsize, init.level=1, desi
       {
         for(ntox in elim.cv:n) #determine elimination boundary, prior beta(1,1) is used in beta-binomial model
         {
-          if(1-pbeta(target, ntox+1, n-ntox+1)>cutoff.eli) {elimineed=1; break;}
+          alp  <- 1
+          bet <- 1
+          if(1-pbeta(target, ntox+alp, n-ntox+bet)>cutoff.eli) {elimineed=1; break;}
         }
         if(elimineed==1) { elim = c(elim, ntox); }
         else { elim = c(elim, NA); } # set the elimination boundary large such that no elimination will actually occurs
@@ -105,7 +107,7 @@ intv.simu.fn <- function(target, p.true, ncohort, cohortsize, init.level=1, desi
   }
   
   
-  select.mtd <- function(target, y, n, cutoff.eli=0.95)
+  select.mtd <- function(target, y, n, cutoff.eli=0.98)
   {
     ## isotonic transformation using the pool adjacent violator algorithm (PAVA)
     pava <- function (x, wt = rep(1, length(x))) 
