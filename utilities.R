@@ -56,7 +56,7 @@ phase.I.pretty.tb <- function(sum.all){
         rw <- paste0(round(res$Selection, 1), "(", round(res$Allocation, 1), ")")
         tb <- rbind(tb, rw)
         tox.nums <- c(tox.nums, res$tol.toxs)
-        sub.nums <- c(sub.nums, sum(res$Allocation))
+        sub.nums <- c(sub.nums, res$tol.Subjs)
         errStops <- c(errStops, 100-sum(res$Selection))
     }
     
@@ -64,7 +64,7 @@ phase.I.pretty.tb <- function(sum.all){
     rownames(tb.df) <- names(sum.all)
     names(tb.df) <- paste0("Level ", 1:ndose)
     
-    tb.df["nTox"] <- round(tox.nums, 1)
+    tb.df["perTox"] <- round(100*tox.nums/sub.nums, 1)
     tb.df["nSub"] <- round(sub.nums, 1)
     tb.df["NonSel.rate"] <- round(errStops, 1)
     tb.df
@@ -117,7 +117,7 @@ phase1.post.fn <- function(ress){
         tol.Subjs <- tol.Subjs + sum(res$dose.ns)
     }
     
-    sum.v <- list(Allocation=Allo, Selection=Sel*100,
+    sum.v <- list(Allocation=100*Allo*numTrials/tol.Subjs, Selection=Sel*100,
                   toxs.nums=toxs.cts,
                   tol.Subjs=tol.Subjs, errStop=100*(numTrials-nonErrStops),
                   tol.toxs=sum(toxs.cts))
