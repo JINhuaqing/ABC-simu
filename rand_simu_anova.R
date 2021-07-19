@@ -1,11 +1,10 @@
-setwd("../")
+setwd("/home/r6user2/Documents/TQ/MCA")
 library(magrittr)
 library(parallel)
+
 source("utilities.R")
-source("./phaseI/crm_utils.R")
-source("./phaseI/boin_utils.R")
-source("./phaseI/anova_settings.R")
-source("ORM_utils.R")
+source("MCA_utils.R")
+source("anova_settings.R")
 
 
 nsimu <- 1000
@@ -49,38 +48,41 @@ mus.list[[3]][[2]] <- c(0.21, 0.37, 0.51, 0.69)
 mus.list[[3]][[3]] <- c(0.25, 0.40, 0.54, 0.72)
 mus.list[[3]][[4]] <- c(0.27, 0.42, 0.56, 0.74)
 
+cohortsize <- 3
 flag <- 0
-for (i1 in 4:length(nlevels)){
-    for (i2 in 1:length(csizes)){
-        for (i3 in c(2, 6, 8, 9)){ # sample size
+for (i1 in 1:(length(nlevels)-1)){
+    for (i2 in 1:length(deltas)){
+        for (i3 in 1:length(sample.sizes)){ # sample size
             for (i4 in 1:length(diff.probs)){
                 for (i5 in 1:length(targets)){
                     flag <- flag + 1
                     nlevel <- nlevels[i1]
-                    cohortsize <- csizes[i2]
+                    delta <- deltas[i2]
                     cur.mu <- mus.list[[i5]][[i1]][i4]
                     sample.size <- sample.sizes[i3]
                     target <- targets[i5]
                     ncohort <- sample.size/cohortsize
-                    paras <- c(nlevel, cohortsize, cur.mu, sample.size, target, ncohort)
-                    names(paras) <- c("nlevel", "chortesize", "mu", "sample size", "target", "num of cohort")
+                    paras <- c(nlevel, cohortsize, cur.mu, sample.size, target, ncohort, delta)
+                    names(paras) <- c("nlevel", "chortesize", "mu", "sample size", "target", "num of cohort", "delta")
                     print(paras)
-                    add.args <- list(alp.prior=target, bet.prior=1-target)
 
                     run.fn <- function(k){
                         print(c(flag, k))
                         p.true.all <- gen.rand.doses(nlevel, target, mu1=cur.mu, mu2=cur.mu)
                         p.true <- p.true.all$p.true
                         tmtd <- p.true.all$mtd.level
+                        if (delta == 1){
+                            cdelta <- runif(1, 0, 0.2)
+                        }else{
+                            cdelta <- delta
+                        }
+                        add.args <- list(alp.prior=1, bet.prior=1, J=1000, delta=cdelta, cutoff.eli=0.95, cutoff.num=3)
+
+                        MCA.res <- MCA2.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=1,  add.args=add.args)
                     
-                        orm.res <- ORM.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, add.args=add.args)
-                        crm.res <- crm.simu.fn(target=target, p.true=p.true, cohortsize=cohortsize, ncohort=ncohort)
-                        boin.res <- boin.simu.fn(target=target, p.true=p.true, ncohort=ncohort, cohortsize)
                     
                         ress <- list(
-                                     orm=orm.res,
-                                     crm = crm.res, 
-                                     boin = boin.res, 
+                                     MCA = MCA.res, 
                                      paras=list(p.true=p.true, 
                                              mtd=tmtd, 
                                              add.args=add.args,
@@ -92,9 +94,9 @@ for (i1 in 4:length(nlevels)){
                     }
                     
                     
-                    file.name <- paste0("../results/", "Anova_MTDSimu_", i1, i2, i3, i4, i5, "_", nsimu, ".RData")
-                    results <- mclapply(1:nsimu, run.fn, mc.cores=20)
-                    #post.process.random(results)
+                    file.name <- paste0("./results/", "Anova_Simu_", i1, i2, i3, i4, i5, "_", nsimu, ".RData")
+                    results <- mclapply(1:nsimu, run.fn, mc.cores=40)
+                    print(post.process.random(results))
                     save(results, file=file.name)
                 }
             }
