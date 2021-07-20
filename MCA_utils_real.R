@@ -123,6 +123,12 @@ MCA2.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     # cohortsize: The sample size in each cohort
     # alp.prior, bet.prior: prior parameters
     #set.seed(2)
+    # record results
+    tk.idxs <- c()
+    tk.dlts <- c()
+    tk.over <- c()
+    tk.pkss <- list()
+    
     earlystop <- 0
     ndose <- length(p.true)
     cidx <- init.level
@@ -165,10 +171,14 @@ MCA2.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
             break()
         }
         
+        tk.idxs <- c(tk.idxs, cidx)
+        tk.dlts <- c(tk.dlts, sum(cres))
+        tk.over <- c(tk.over, mean(overdose.fn(phi, add.args)))
         
         # calculate the Pr(Y_n|A_k, M_n), unnormalized
         pss <- lapply(1:ndose, function(k)gen.mu.rand(k, J=add.args$J, K=ndose, phi=phi, delta=add.args$delta))
         pks <- sapply(1:ndose, function(k)prob.k(pss[[k]], tys, tns))
+        tk.pkss[[i]] <- pks/sum(pks)
         cMTD <- which.max(pks)
         if (cidx > cMTD){
             cidx <- cidx - 1
@@ -190,7 +200,7 @@ MCA2.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     }else{
         MTD <- 99
     }
-    list(MTD=MTD, dose.ns=tns, DLT.ns=tys, p.true=p.true, target=phi, over.doses=tover.doses)
+    list(MTD=MTD, dose.ns=tns, DLT.ns=tys, p.true=p.true, target=phi, over.doses=tover.doses, tk.over=tk.over, tk.dlts=tk.dlts, tk.idxs=tk.idxs, tk.pkss=tk.pkss)
 }
 
 #phi <- 0.3

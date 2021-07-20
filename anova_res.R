@@ -1,52 +1,95 @@
-#library(bestNormalize)
 library(dplyr)
+setwd("C:/Users/JINHU/Documents/ProjectCode/MCA")
+source("./utilities.R")
+source("./anova_settings.R")
+anova.ress <- dir("./results/anova", pattern="*.RData", full.names = TRUE)
 
-setwd("C:/Users/Dell/Documents/ProjectCode/MCA")
-res <- read.csv("./result.csv")
-names(res) <- c("Targets", "nLevels", "delta", "DiffProbs", "SS", "Y")
+sep.paths <- strsplit(anova.ress, "_")
+raw.labs <- sapply(sep.paths, function(i)i[3])
+tmp.fn <- function(i){
+    if (length(i)==5){
+        return(as.numeric(i))
+    }else{
+       num.i <- as.numeric(i) 
+       rv <- c(num.i[1:2], 10*num.i[3]+num.i[4], num.i[5:6])
+       return(rv)
+    }
+}
+labs <- lapply(strsplit(raw.labs, ""), tmp.fn)
+mat.labs <- do.call(rbind, labs)
 
-res$delta <- as.character(res$delta)
-res$SS <- res$SS + 1
-res <- filter(res, !delta=="CRM", SS>=4)
+anova.data.list <- list()
+for (i in 1:length(anova.ress)){
+    print(i)
+    anova.fil <- anova.ress[i]
+    s.labs <- mat.labs[i, ]
+    s.true.labs <- rep(0, length(s.labs))
+    s.true.labs[1] <- nlevels[s.labs[1]]
+    s.true.labs[2] <- deltas[s.labs[2]]
+    s.true.labs[3] <- sample.sizes[s.labs[3]]
+    s.true.labs[4] <- diff.probs[s.labs[4]]
+    s.true.labs[5] <- targets[s.labs[5]]
+    
+    load(anova.fil)
+    res <- post.process.random(results)
+    com.res <- c(s.true.labs,  unlist(res))
+    
+    anova.data.list[[i]] <- com.res
+}
 
-res$nLevels <- as.factor(res$nLevels)
-res$SS <- as.factor(res$SS)
-res$DiffProbs <- as.factor(res$DiffProbs)
-res$Targets <- as.factor(res$Targets)
-res$delta <- as.factor(res$delta)
-res$Y <- res$Y/100
-summary(res$delta)
+
+anova.data <- do.call(rbind, anova.data.list)
+colnames(anova.data) <- c(c("nLevels", "delta", "SampleSizes", 
+                         "DiffProbs", "Targets"), 
+                       colnames(anova.data)[6:11])
+anova.data.df <- as.data.frame(anova.data)
+rownames(anova.data.df) <- NULL
+anova.data.df
+
+anova.data.df$nLevels <- as.factor(anova.data.df$nLevels)
+anova.data.df$DiffProbs <- as.factor(anova.data.df$DiffProbs)
+anova.data.df$Targets <- as.factor(anova.data.df$Targets)
+anova.data.df$SampleSizes<- as.factor(anova.data.df$SampleSizes)
+anova.data.df$delta<- as.factor(anova.data.df$delta)
 
 
-fit <- aov(Y~(nLevels+SS+DiffProbs+Targets+delta)*(nLevels+SS+DiffProbs+Targets+delta), 
-           data=res)
+fit <- aov(MTD.Sel~(nLevels+delta+SampleSizes+DiffProbs+Targets)*(nLevels+delta+SampleSizes+DiffProbs+Targets),
+           data=anova.data.df)
 summary(fit)
 
-
+## SST 
+SST <- sum((anova.data.df$MTD.Sel - mean(anova.data.df$MTD.Sel))**2)
+sum.fit <- summary(fit)
+SSE.delta <- sum(sum.fit[[1]]$`Sum Sq`[c(2)])
+SSE.delta/SST * 100
+# main factors, DiffProbs, nLevels, SampleSize
 
 # fit diagnostic
 errs <- fit$residuals
 norm.errs <- errs/sd(errs)
 ks.test(norm.errs, pnorm)
-plot(norm.errs)
-norm.errs %>% density %>% plot
-rnorm(10000) %>% density %>% lines(col="red")
+#plot(norm.errs)
+#norm.errs %>% density %>% plot
+#rnorm(10000) %>% density %>% lines(col="red")
 
 
-dat <- group_by(res, DiffProbs, delta)
-tb <- summarise(dat, Y=mean(Y))
-tb
-x.vs <- c(0, 0.05, 0.1, 0.15, 0.2)
 
-plot(x.vs, tb$Y[tb$DiffProbs==0.05], ylim=c(0.2, 0.8), type="l", ylab = "Prob Diff", xlab=expression(delta))
+dat <- group_by(anova.data.df, DiffProbs, delta)
+tb <- summarise(dat, Y=mean(MTD.Sel))
+x.vs <- c(0, 0.05, 0.1, 0.15, 0.2, 0.25)
+
+png(filename="plots/anova.png", unit="in", height=6, width=8, res=300)
+plot(x.vs, tb$Y[tb$DiffProbs==0.05], ylim=c(0.2, 0.8), xaxt="n",
+     type="b", ylab = "MTD selection (%)", xlab=expression(delta), col=1, lty=1, pch=1)
+flag <- 2
 for (dp in c(0.07, 0.1, 0.15)){
-    lines(x.vs, tb$Y[tb$DiffProbs==dp])
+    lines(x.vs, tb$Y[tb$DiffProbs==dp], col=flag, lty=flag, pch=flag, type="b")
+    flag <- flag + 1
 }
-
-
-SST <- sum((res$Y - mean(res$Y))**2)
-sum.fit <- summary(fit)
-SSE.delta <- sum(sum.fit[[1]]$`Sum Sq`[c(5)])
-SSE.delta/SST * 100
-
-4*4*3*17
+legend("topright", c(expression(Delta ~'= 0.05'~"  "), 
+                     expression(Delta ~'= 0.07'~"  "),
+                     expression(Delta ~'= 0.10'~"  "),
+                     expression(Delta ~'= 0.15'~"  ")
+                     ), col=1:4, lty=1:4,, pch=1:4, ncol=2)
+axis(side=1, at=x.vs, labels=c(0, 0.05, 0.10, 0.15, 0.20, "random"))
+dev.off()
