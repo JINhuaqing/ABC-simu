@@ -14,7 +14,8 @@ ncohort <- 10
 cohortsize <- 3
 init.level <- 1
 
-add.args <- list(alp.prior=1, bet.prior=1, J=1000, delta=0.1, cutoff.eli=0.95, cutoff.num=3)
+add.args <- list(alp.prior=1, bet.prior=1, J=10000, delta=0.1, cutoff.eli=0.95, cutoff.num=3)
+#add.args <- list(alp.prior=1, bet.prior=1, J=1000, delta=0.1, cutoff.eli=0.95, cutoff.num=3)
 nsimu <- 5000
 seeds <- 1:nsimu
 
