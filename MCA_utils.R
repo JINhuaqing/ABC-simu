@@ -1,3 +1,5 @@
+# MCA2.simu.fn is the method we use in the paper
+
 #setwd("C:/Users/Dell/Documents/ProjectCode/phaseI/Rcode")
 #setwd("/Users/jinhuaqing/Documents/Projects_Code/phaseI/Rcode")
 #setwd("C:/Users/JINHU/Documents/ProjectCode/MCA")
