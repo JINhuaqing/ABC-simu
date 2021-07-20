@@ -1,3 +1,5 @@
 *.RData
 *.jpg
 *.png
+fix1*
+fix3_simu.R
