@@ -63,7 +63,7 @@ ncores <- 70
 m.names <- c("MCA2", "BOIN", "CCD", "CRM", "keyB", "mTPI","UMPBI")
 m.names <- c("MCA", "MCA2", "BOIN", "CCD", "CRM", "keyB", "mTPI","UMPBI")
 results <- mclapply(1:nsimu, run.fn, mc.cores=ncores)
-file.name <- paste0("./results/", "Simu", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, "_fix3_",  idx, ".RData")
+file.name <- paste0("./results/", "SimuLJ", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, "_fix3_",  idx, ".RData")
 save(results, file=file.name)
 
 
