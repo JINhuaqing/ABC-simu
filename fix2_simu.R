@@ -35,8 +35,8 @@ tmtd <- MTD.level(target, p.true)
 run.fn <- function(i){
     print(i)
     set.seed(seeds[i])
-#    MCA.res <- MCA.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
-    MCA2.res <- MCA2.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
+    MCA.res <- MCA.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
+#    MCA2.res <- MCA2.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
     CRM.res <- CRM.simu.fn(target=target, p.true=p.true, init.level=init.level, cohortsize=cohortsize, ncohort=ncohort, add.args=add.args)
    #(1--CCD, 2--mTPI, 3--BOIN, 4--Keyboard, 5--UMPBI) \n")
     CCD.res   <- intv.simu.fn(target=target, p.true=p.true, ncohort=ncohort,  init.level=init.level, cohortsize=cohortsize, design=1, cutoff.eli=add.args$cutoff.eli)
@@ -46,8 +46,8 @@ run.fn <- function(i){
     UMPBI.res <- intv.simu.fn(target=target, p.true=p.true, ncohort=ncohort,  init.level=init.level, cohortsize=cohortsize, design=5, cutoff.eli=add.args$cutoff.eli)
     
     ress <- list(
-#                 MCA = MCA.res,
-                 MCA2 = MCA2.res,
+                 MCA = MCA.res,
+#                 MCA2 = MCA2.res,
                  CRM = CRM.res, 
                  CCD = CCD.res, 
                  mTPI= mTPI.res, 
@@ -65,11 +65,11 @@ run.fn <- function(i){
     
 }
 
-ncores <- 35
+ncores <- 40
 m.names <- c("MCA", "MCA2", "BOIN", "CCD", "CRM", "keyB", "mTPI","UMPBI")
-m.names <- c("MCA2", "BOIN", "CCD", "CRM", "keyB", "mTPI","UMPBI")
+m.names <- c("MCA", "BOIN", "CCD", "CRM", "keyB", "mTPI","UMPBI")
 results <- mclapply(1:nsimu, run.fn, mc.cores=ncores)
-file.name <- paste0("./results/", "SimuLJ", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, "_fix2_",  idx, ".RData")
+file.name <- paste0("./results/", "SimuMCA_NoEliLJ", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, "_fix2_",  idx, ".RData")
 save(results, file=file.name)
 
 

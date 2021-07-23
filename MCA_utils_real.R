@@ -38,84 +38,9 @@ prob.k <- function(pss, dlts, nums){
 
 
 
-# Simulation function for MCA
+
+
 MCA.simu.fn <- function(phi, p.true, ncohort=12, init.level=1, 
-                              cohortsize=1, add.args=list()){
-    # phi: Target DIL rate
-    # p.true: True DIL rates under the different dose levels
-    # ncohort: The number of cohorts
-    # cohortsize: The sample size in each cohort
-    # alp.prior, bet.prior: prior parameters
-    #set.seed(2)
-    earlystop <- 0
-    ndose <- length(p.true)
-    cidx <- init.level
-    
-    tys <- rep(0, ndose) # number of responses for different doses.
-    tns <- rep(0, ndose) # number of subject for different doses.
-    tover.doses <- rep(0, ndose) # Whether each dose is overdosed or not, 1 yes
-    #pss <- lapply(1:ndose, function(k)gen.mu.rand(k, J=add.args$J, K=ndose, phi=phi, delta=add.args$delta))
-
-    
-    
-    
-    
-    for (i in 1:ncohort){
-        if (i == ncohort){
-             cohortsize <- 1
-        }
-        pc <- p.true[cidx] 
-        
-        # sample from current dose
-        cres <- rbinom(cohortsize, 1, pc)
-        
-        # update results
-        tys[cidx] <- tys[cidx] + sum(cres)
-        tns[cidx] <- tns[cidx] + cohortsize
-        
-        
-        
-        cy <- tys[cidx]
-        cn <- tns[cidx]
-        
-        add.args <- c(list(y=cy, n=cn, tys=tys, tns=tns, cidx=cidx), add.args)
-        
-        if (overdose.fn(phi, add.args)){
-            tover.doses[cidx:ndose] <- 1
-        }
-        
-        if (tover.doses[1] == 1){
-            earlystop <- 1
-            break()
-        }
-        
-        
-        # calculate the Pr(Y_n|A_k, M_n), unnormalized
-        pss <- lapply(1:ndose, function(k)gen.mu.rand(k, J=add.args$J, K=ndose, phi=phi, delta=add.args$delta))
-        pks <- sapply(1:ndose, function(k)prob.k(pss[[k]], tys, tns))
-        cMTD <- which.max(pks)
-        if (cidx > cMTD){
-            cidx <- cidx - 1
-        }else if (cidx == cMTD){
-            cidx <- min(cidx, sum(1-tover.doses))
-        }else {
-            cidx <- min(cidx+1, sum(1-tover.doses))
-        }
-        
-        
-    }
-    
-    
-    if (earlystop==0){
-        MTD <- select.mtd(phi, tns, tys, cutoff.eli=add.args$cutoff.eli)$MTD
-    }else{
-        MTD <- 99
-    }
-    list(MTD=MTD, dose.ns=tns, DLT.ns=tys, p.true=p.true, target=phi, over.doses=tover.doses)
-}
-
-
-MCA2.simu.fn <- function(phi, p.true, ncohort=12, init.level=1, 
                               cohortsize=1, add.args=list()){
     # phi: Target DIL rate
     # p.true: True DIL rates under the different dose levels
@@ -136,7 +61,7 @@ MCA2.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     tys <- rep(0, ndose) # number of responses for different doses.
     tns <- rep(0, ndose) # number of subject for different doses.
     tover.doses <- rep(0, ndose) # Whether each dose is overdosed or not, 1 yes
-    #pss <- lapply(1:ndose, function(k)gen.mu.rand(k, J=add.args$J, K=ndose, phi=phi, delta=add.args$delta))
+    pss <- lapply(1:ndose, function(k)gen.mu.rand(k, J=add.args$J, K=ndose, phi=phi, delta=add.args$delta))
     
     
     
@@ -176,16 +101,15 @@ MCA2.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
         tk.over <- c(tk.over, mean(overdose.fn(phi, add.args)))
         
         # calculate the Pr(Y_n|A_k, M_n), unnormalized
-        pss <- lapply(1:ndose, function(k)gen.mu.rand(k, J=add.args$J, K=ndose, phi=phi, delta=add.args$delta))
         pks <- sapply(1:ndose, function(k)prob.k(pss[[k]], tys, tns))
         tk.pkss[[i]] <- pks/sum(pks)
         cMTD <- which.max(pks)
         if (cidx > cMTD){
             cidx <- cidx - 1
         }else if (cidx == cMTD){
-            cidx <- min(cidx, sum(1-tover.doses))
+            cidx <- cidx
         }else {
-            cidx <- min(cidx+1, sum(1-tover.doses))
+            cidx <- cidx + 1
         }
         
         
@@ -193,19 +117,10 @@ MCA2.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     
     
     if (earlystop==0){
-        # maxD <- sum(1-tover.doses)
-        # pksp <- sapply(1:maxD, function(k)prob.k(pss[[k]], tys, tns))
-        # MTD <- which.max(pksp)
-        MTD <- min(cMTD, sum(1-tover.doses))
+        MTD <- select.mtd(phi, tns, tys, cutoff.eli=2)$MTD
     }else{
         MTD <- 99
     }
     list(MTD=MTD, dose.ns=tns, DLT.ns=tys, p.true=p.true, target=phi, over.doses=tover.doses, tk.over=tk.over, tk.dlts=tk.dlts, tk.idxs=tk.idxs, tk.pkss=tk.pkss)
 }
 
-#phi <- 0.3
-#p.true <- c(0.2, 0.3, 0.4, 0.5, 0.6)
-#add.args <- list(alp.prior=1, bet.prior=1, J=1000, delta=0.1)
-#MCA.simu.fn(phi, p.true, ncohort=10, cohortsize=3, add.args=add.args)
-#MCA2.simu.fn(phi, p.true, ncohort=10, cohortsize=3, add.args=add.args)
-#

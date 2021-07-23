@@ -48,16 +48,8 @@ CRM.simu.fn <-function(target = 0.30, ## Target toxicity pr
         for(j in 1:ndose) { pi.hat[j] = integrate(posttoxf,lower=-Inf,upper=Inf,p.prior,y,d,j)$value/marginal;}
         
         
-        p.overtoxs <- rep(0, ndose)
-        for (kk in 1:ndose){
-            p.overtoxs[kk] = integrate(posterior,lower=-Inf,upper=log(log(target)/log(p.prior[kk])),p.prior,y,d)$value/marginal;	
-        }
-        
-        if (length(d) >= 6){
-            tover.doses[p.overtoxs>add.args$cutoff.eli] <- 1
-        }
-        
-        if (tover.doses[1] == 1){
+        p.overtox <- integrate(posterior,lower=-Inf,upper=log(log(target)/log(p.prior[1])),p.prior,y,d)$value/marginal;	
+        if (p.overtox > add.args$cutoff.eli){
             stop <- 1
             break()
         }
@@ -67,9 +59,9 @@ CRM.simu.fn <-function(target = 0.30, ## Target toxicity pr
         if (dose.curr> cMTD){
             dose.curr <- dose.curr - 1
         }else if (dose.curr== cMTD){
-            dose.curr <- min(cMTD, sum(1-tover.doses))
+            dose.curr <- dose.curr
         }else {
-            dose.curr <- min(dose.curr+1, sum(1-tover.doses))
+            dose.curr <- dose.curr + 1
         }
     }
     if(stop==1) 
@@ -78,7 +70,7 @@ CRM.simu.fn <-function(target = 0.30, ## Target toxicity pr
     }
     else 
     { 
-        MTD <- min(cMTD, sum(1-tover.doses))
+        MTD <- cMTD
     }
 
     for (j in 1:ndose){
@@ -99,10 +91,13 @@ init.level <- 1
 nsimu <- 5000
 seeds <- 1:nsimu
 
-# delta=0.15
-add.args <- list(alp.prior=1, bet.prior=1, J=1000, delta=0.10, cutoff.eli=0.95, cutoff.num=3)
+add.args <- list(alp.prior=1, bet.prior=1, J=10000, delta=0.10, cutoff.eli=0.95, cutoff.num=3)
 p.trues <- list()
-p.trues[[1]] <- c(0.12, 0.40, 0.67)
+yns <- c(24, 10, 3)
+tns <- c(3, 4, 2)
+alp <- 1
+bet <- 1
+p.trues[[1]] <- (tns+alp)/(yns+bet+alp)
 
 
 idx <- 1
@@ -114,11 +109,10 @@ run.fn <- function(i){
     print(i)
     set.seed(seeds[i])
     MCA.res <- MCA.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
-    MCA2.res <- MCA2.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
     CRM.res <- CRM.simu.fn(target=target, p.true=p.true, init.level=init.level, cohortsize=cohortsize, ncohort=ncohort, add.args=add.args)
     ress <- list(
                  MCA = MCA.res,
-                 MCA2 = MCA2.res,
+                 #MCA2 = MCA2.res,
                  CRM = CRM.res, 
                  paras=list(p.true=p.true, 
                              mtd=tmtd, 
@@ -131,10 +125,10 @@ run.fn <- function(i){
     
 }
 
-ncores <- 10
-m.names <- c("MCA", "MCA2", "CRM")
+ncores <- 40
+m.names <- c("MCA", "CRM")
 results <- mclapply(1:nsimu, run.fn, mc.cores=ncores)
-file.name <- paste0("./results/", "RealData", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, "_fix3_",  idx, ".RData")
+file.name <- paste0("./results/", "RealDataMCA_NoELiLJ", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, ".RData")
 save(results, file=file.name)
 
 

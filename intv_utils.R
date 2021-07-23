@@ -137,7 +137,9 @@ intv.simu.fn <- function(target, p.true, ncohort, cohortsize, init.level=1, desi
     elimi=rep(0, ndose);
     for(i in 1:ndose)
     {
-      if(n[i]>2) {if(1-pbeta(target, y[i]+1, n[i]-y[i]+1)>cutoff.eli) {elimi[i:ndose]=1; break;}}
+      alp <- 1
+      bet <- 1
+      if(n[i]>=3) {if(1-pbeta(target, y[i]+alp, n[i]-y[i]+bet)>cutoff.eli) {elimi[i:ndose]=1; break;}}
     }
     
     if(elimi[1]==1) { selectdose=99; } ## no dose should be selected if the first dose is already very toxic
@@ -192,13 +194,13 @@ intv.simu.fn <- function(target, p.true, ncohort, cohortsize, init.level=1, desi
       }
       
       ## dose escalation/de-escalation
-      if(y[d]<=b.e[nc] && d!=ndose) { if(elimi[d+1]==0) d=d+1; }
+      if(y[d]<=b.e[nc] && d!=ndose) {  d=d+1; }
       else if(y[d]>=b.d[nc] && d!=1) { d=d-1; }
       else { d=d; }
     }
   
     if(earlystop==1) { MTD=99; }
-    else  MTD=select.mtd(target, y, n, cutoff.eli);		
+    else  MTD=select.mtd(target, y, n, 2);		
     res <- list(MTD=MTD, dose.ns=n, DLT.ns=y, p.true=p.true, target=target)
     res
   

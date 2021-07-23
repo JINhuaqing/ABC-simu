@@ -56,6 +56,7 @@ MCA.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     tys <- rep(0, ndose) # number of responses for different doses.
     tns <- rep(0, ndose) # number of subject for different doses.
     tover.doses <- rep(0, ndose) # Whether each dose is overdosed or not, 1 yes
+    pss <- lapply(1:ndose, function(k)gen.mu.rand(k, J=add.args$J, K=ndose, phi=phi, delta=add.args$delta))
 
     
     
@@ -89,15 +90,14 @@ MCA.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
         
         
         # calculate the Pr(Y_n|A_k, M_n), unnormalized
-        pss <- lapply(1:ndose, function(k)gen.mu.rand(k, J=add.args$J, K=ndose, phi=phi, delta=add.args$delta))
         pks <- sapply(1:ndose, function(k)prob.k(pss[[k]], tys, tns))
         cMTD <- which.max(pks)
         if (cidx > cMTD){
             cidx <- cidx - 1
         }else if (cidx == cMTD){
-            cidx <- min(cidx, sum(1-tover.doses))
+            cidx <- cidx
         }else {
-            cidx <- min(cidx+1, sum(1-tover.doses))
+            cidx <- cidx + 1
         }
         
         
@@ -105,7 +105,7 @@ MCA.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     
     
     if (earlystop==0){
-        MTD <- select.mtd(phi, tns, tys, cutoff.eli=add.args$cutoff.eli)$MTD
+        MTD <- select.mtd(phi, tns, tys, cutoff.eli=2)$MTD
     }else{
         MTD <- 99
     }
@@ -128,6 +128,7 @@ MCA2.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     tys <- rep(0, ndose) # number of responses for different doses.
     tns <- rep(0, ndose) # number of subject for different doses.
     tover.doses <- rep(0, ndose) # Whether each dose is overdosed or not, 1 yes
+    pss <- lapply(1:ndose, function(k)gen.mu.rand(k, J=add.args$J, K=ndose, phi=phi, delta=add.args$delta))
     
     
     
@@ -160,15 +161,14 @@ MCA2.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
         
         
         # calculate the Pr(Y_n|A_k, M_n), unnormalized
-        pss <- lapply(1:ndose, function(k)gen.mu.rand(k, J=add.args$J, K=ndose, phi=phi, delta=add.args$delta))
         pks <- sapply(1:ndose, function(k)prob.k(pss[[k]], tys, tns))
         cMTD <- which.max(pks)
         if (cidx > cMTD){
             cidx <- cidx - 1
         }else if (cidx == cMTD){
-            cidx <- min(cidx, sum(1-tover.doses))
+            cidx <- cidx
         }else {
-            cidx <- min(cidx+1, sum(1-tover.doses))
+            cidx <- cidx + 1
         }
         
         
@@ -176,10 +176,7 @@ MCA2.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     
     
     if (earlystop==0){
-        # maxD <- sum(1-tover.doses)
-        # pksp <- sapply(1:maxD, function(k)prob.k(pss[[k]], tys, tns))
-        # MTD <- which.max(pksp)
-        MTD <- min(cMTD, sum(1-tover.doses))
+        MTD <- cMTD
     }else{
         MTD <- 99
     }
