@@ -14,7 +14,7 @@ ncohort <- 16
 cohortsize <- 3
 init.level <- 1
 
-add.args <- list(alp.prior=1, bet.prior=1, J=10000, delta=0.1, cutoff.eli=0.95, cutoff.num=3)
+add.args <- list(alp.prior=0.5, bet.prior=0.5, J=10000, delta=0.1, cutoff.eli=0.95, cutoff.num=3)
 nsimu <- 5000
 seeds <- 1:nsimu
 
@@ -46,7 +46,7 @@ Delta <- 0.05
 mus <- c(0.23, 0.41, 0.58, 0.77)
 #mus <- c(0.23, 0.38, 0.53, 0.71)
 Deltas <- c(0.05, 0.07, 0.10, 0.15)
-for (jj in 1:4){
+for (jj in 2){
     mu <- mus[jj]
     Delta <- Deltas[jj]
     ndose <- 8
@@ -57,7 +57,7 @@ for (jj in 1:4){
         p.true <- p.true.all$p.true
         tmtd <- p.true.all$mtd.level
     
-        MCA.res <- MCA.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
+        MCA.res <- MCA2.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
         #MCA2.res <- MCA2.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
         CRM.res <- CRM.simu.fn(target=target, p.true=p.true, init.level=init.level, cohortsize=cohortsize, ncohort=ncohort, add.args=add.args)
        #(1--CCD, 2--mTPI, 3--BOIN, 4--Keyboard, 5--UMPBI) \n")
@@ -87,10 +87,10 @@ for (jj in 1:4){
     }
     
     
-    file.name <- paste0("./results/", "SimuMCA_NoEliLJ", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, "_random_", Delta,  ".RData")
+    file.name <- paste0("./results/", "Test2SimuMCA_NoEliLJ", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, "_random_", Delta,  ".RData")
     results <- mclapply(1:nsimu, run.fn, mc.cores=40)
-    post.process.random(results)
     save(results, file=file.name)
+    print(post.process.random(results))
 }
 
 

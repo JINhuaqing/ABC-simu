@@ -8,6 +8,73 @@ library(magrittr)
 library(BOIN)
 library(arrApply)
 
+iso.reg <- function(y, n)
+{
+    ## isotonic transformation using the pool adjacent violator algorithm (PAVA)
+    pava <- function (x, wt = rep(1, length(x))) 
+    {
+        n <- length(x)
+        if (n <= 1) 
+            return(x)
+        if (any(is.na(x)) || any(is.na(wt))) {
+            stop("Missing values in 'x' or 'wt' not allowed")
+        }
+        lvlsets <- (1:n)
+        repeat {
+            viol <- (as.vector(diff(x)) < 0)
+            if (!(any(viol))) 
+                break
+            i <- min((1:(n - 1))[viol])
+            lvl1 <- lvlsets[i]
+            lvl2 <- lvlsets[i + 1]
+            ilvl <- (lvlsets == lvl1 | lvlsets == lvl2)
+            x[ilvl] <- sum(x[ilvl] * wt[ilvl])/sum(wt[ilvl])
+            lvlsets[ilvl] <- lvl1
+        }
+        x
+    }
+    
+  ## poster mean and variance of toxicity probabilities using beta(0.005, 0.005) as the prior 
+  phat = (y+0.005)/(n+0.01); 
+  phat.var = (y+0.005)*(n-y+0.005)/((n+0.01)^2*(n+0.01+1))
+   
+  ## perform the isotonic transformation using PAVA
+  phat = pava(phat, wt=1/phat.var) 
+  phat
+}
+
+mtd.sel.post.fn <- function(tys, tns, phi, delta, alp.prior, bet.prior){
+   # tys: num of dlts for each dose level, vector of K  
+   # tns: num of patients for each dose level, vector of K  
+   # phi: the target prob
+   # delta: win size
+   # alp.prior, bet.prior: parameters of the prior
+    
+    post.alps <- tys + alp.prior
+    post.bets <- tns - tys + bet.prior
+    vs <- post.alps*post.bets/((post.alps+post.bets)**2)/(post.alps+post.bets+1)
+    ms <- iso.reg(tys, tns)
+    
+    alps <- (ms**2*(1-ms)-ms*vs)/vs
+    bets <- alps/ms - alps
+    
+    K <- length(alps)
+    low <- phi - delta
+    up <- phi + delta
+    probs <- c()
+    for (k in 1:K){
+        alp <- alps[k]
+        bet <- bets[k]
+        cur.prob <- pbeta(up, alp, bet) - pbeta(low, alp, bet)
+        probs[k] <- cur.prob
+    }
+    mtd <- which.max(probs)
+    res <- list(mtd=mtd, probs=probs)
+    res
+}
+
+
+
 gen.u.rand <- function(k, K=5, phi=0.3, delta=0.1){
     cps <- c(phi)
     if (k > 1){
@@ -176,7 +243,7 @@ MCA2.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     
     
     if (earlystop==0){
-        MTD <- cMTD
+        MTD <- mtd.sel.post.fn(tys, tns, phi, add.args$delta, add.args$alp.prior, add.args$bet.prior)$mtd
     }else{
         MTD <- 99
     }

@@ -273,6 +273,9 @@ post.process.onemethod <- function(res, paras){
     rv <- rep(0, 7)
     rv[1] <- sum(res$MTD==tmtd)
     rv[2] <- res$dose.ns[tmtd]
+    #if (length(res$MTD)==0){
+    #    print(1)
+    #}
     if (res$MTD == 99){
         rv[3] <- 0
     }else{

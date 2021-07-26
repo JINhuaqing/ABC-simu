@@ -78,7 +78,7 @@ for (i1 in 1:length(nlevels)){
                         }
                         add.args <- list(alp.prior=1, bet.prior=1, J=1000, delta=cdelta, cutoff.eli=0.95, cutoff.num=3)
 
-                        MCA.res <- MCA2.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=1,  add.args=add.args)
+                        MCA.res <- MCA.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=1,  add.args=add.args)
                     
                     
                         ress <- list(
@@ -94,7 +94,7 @@ for (i1 in 1:length(nlevels)){
                     }
                     
                     
-                    file.name <- paste0("./results/", "Anova_Simu_", i1, i2, i3, i4, i5, "_", nsimu, ".RData")
+                    file.name <- paste0("./results/", "AnovaNoEli_Simu_", i1, i2, i3, i4, i5, "_", nsimu, ".RData")
                     results <- mclapply(1:nsimu, run.fn, mc.cores=40)
                     print(post.process.random(results))
                     save(results, file=file.name)
