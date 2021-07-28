@@ -117,7 +117,8 @@ phase1.post.fn <- function(ress){
         tol.Subjs <- tol.Subjs + sum(res$dose.ns)
     }
     
-    sum.v <- list(Allocation=100*Allo*numTrials/tol.Subjs, Selection=Sel*100,
+    sum.v <- list(Allocation=Allo, Selection=Sel*100,
+    #Allocation=100*Allo*numTrials/tol.Subjs, 
                   toxs.nums=toxs.cts,
                   tol.Subjs=tol.Subjs, errStop=100*(numTrials-nonErrStops),
                   tol.toxs=sum(toxs.cts))
@@ -273,9 +274,7 @@ post.process.onemethod <- function(res, paras){
     rv <- rep(0, 7)
     rv[1] <- sum(res$MTD==tmtd)
     rv[2] <- res$dose.ns[tmtd]
-    #if (length(res$MTD)==0){
-    #    print(1)
-    #}
+
     if (res$MTD == 99){
         rv[3] <- 0
     }else{

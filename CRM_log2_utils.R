@@ -18,8 +18,8 @@ ske2xs.fn <- function(p.prior, alp.m, bet.m){
 }
 
 posterior <- function(alpha, beta, xs, y, d) {
-    alp.v <- 1
-    bet.v <- 1
+    alp.v <- 2
+    bet.v <- 2
     lik=1;
     for(i in 1:length(y))
     {

@@ -8,8 +8,8 @@ source("CRM_utils.R")
 source("MCA_utils.R")
 
 
-target <- 0.3
-ncohort <- 30
+target <- 0.25
+ncohort <- 48
 cohortsize <- 1
 init.level <- 1
 
@@ -34,14 +34,12 @@ seeds <- 1:nsimu
 # dose 7, mu1=mu2=0.56, 0.1
 # dose 7, mu1=mu2=0.74, 0.15
 
-mu <- 0.23
-Delta <- 0.05
-mus <- c(0.23, 0.38, 0.53, 0.71)
+mus <- c(0.23, 0.41, 0.58, 0.77)
 Deltas <- c(0.05, 0.07, 0.10, 0.15)
-for (jj in 1:4){
+for (jj in 4){
     mu <- mus[jj]
     Delta <- Deltas[jj]
-    ndose <- 5
+    ndose <- 8
     run.fn <- function(k){
         print(k)
         set.seed(seeds[k])
@@ -49,10 +47,10 @@ for (jj in 1:4){
         p.true <- p.true.all$p.true
         tmtd <- p.true.all$mtd.level
     
-        MCA2.res <- MCA2.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
+        MCA.res <- MCA.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
         CRM.res <- CRM.simu.fn(target=target, p.true=p.true, init.level=init.level, cohortsize=cohortsize, ncohort=ncohort, add.args=add.args)
         ress <- list(
-                     MCA2 = MCA2.res,
+                     MCA = MCA.res,
                      CRM = CRM.res, 
                      paras=list(p.true=p.true, 
                                  mtd=tmtd, 

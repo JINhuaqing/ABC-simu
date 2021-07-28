@@ -16,10 +16,6 @@ source("utilities.R")
 #load(file.name)
 #print(post.process.random(results))
 
-file.name <- "./results/Test2SimuMCA_NoEliLJ95_5000_ncohort_16_random_0.07.RData"
-load(file.name)
-print(post.process.random(results))
-#file.name <- "./results/SimuNoEliLJ95_5000_ncohort_10_random_0.15.RData"
-file.name <- "./results/SimuMCA_NoEliLJ95_5000_ncohort_16_random_0.07.RData"
+file.name <- "./results/SimuC195_5000_ncohort_48_random_0.15.RData"
 load(file.name)
 print(post.process.random(results))
