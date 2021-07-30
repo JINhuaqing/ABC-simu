@@ -76,7 +76,8 @@ mtd.sel.post.fn <- function(tys, tns, phi, delta, alp.prior, bet.prior){
 
 
 gen.u.rand <- function(k, K=5, phi=0.3, delta=0.1){
-    cps <- c(phi)
+    #cps <- c(phi)
+    cps <- c(runif(1, phi-delta, phi+delta))
     if (k > 1){
         cps <- c(cps, runif(k-1, min=0, max=phi-delta))
     }

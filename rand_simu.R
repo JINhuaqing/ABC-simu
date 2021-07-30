@@ -6,6 +6,7 @@ library(parallel)
 source("utilities.R")
 source("CRM_utils.R")
 source("MCA_utils.R")
+source("MCA_utils_NOC.R")
 source("intv_utils.R")
 
 
@@ -46,7 +47,7 @@ Delta <- 0.05
 mus <- c(0.23, 0.41, 0.58, 0.77)
 #mus <- c(0.23, 0.38, 0.53, 0.71)
 Deltas <- c(0.05, 0.07, 0.10, 0.15)
-for (jj in 2){
+for (jj in 1:4){
     mu <- mus[jj]
     Delta <- Deltas[jj]
     ndose <- 8
@@ -57,8 +58,7 @@ for (jj in 2){
         p.true <- p.true.all$p.true
         tmtd <- p.true.all$mtd.level
     
-        MCA.res <- MCA2.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
-        #MCA2.res <- MCA2.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
+        MCA.res <- MCA.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
         CRM.res <- CRM.simu.fn(target=target, p.true=p.true, init.level=init.level, cohortsize=cohortsize, ncohort=ncohort, add.args=add.args)
        #(1--CCD, 2--mTPI, 3--BOIN, 4--Keyboard, 5--UMPBI) \n")
         CCD.res   <- intv.simu.fn(target=target, p.true=p.true, ncohort=ncohort,  cutoff.eli=add.args$cutoff.eli, init.level=init.level, cohortsize=cohortsize, design=1)
@@ -66,10 +66,11 @@ for (jj in 2){
         BOIN.res  <- intv.simu.fn(target=target, p.true=p.true, ncohort=ncohort,  cutoff.eli=add.args$cutoff.eli, init.level=init.level, cohortsize=cohortsize, design=3)
         keyB.res  <- intv.simu.fn(target=target, p.true=p.true, ncohort=ncohort,  cutoff.eli=add.args$cutoff.eli, init.level=init.level, cohortsize=cohortsize, design=4)
         UMPBI.res <- intv.simu.fn(target=target, p.true=p.true, ncohort=ncohort,  cutoff.eli=add.args$cutoff.eli, init.level=init.level, cohortsize=cohortsize, design=5)
+        MCA2.res <- MCANOC.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
         
         ress <- list(
                      MCA = MCA.res,
-        #             MCA2 = MCA2.res,
+                     MCA2 = MCA2.res,
                      BOIN = BOIN.res, 
                      CCD = CCD.res, 
                      CRM = CRM.res, 
@@ -87,7 +88,7 @@ for (jj in 2){
     }
     
     
-    file.name <- paste0("./results/", "Test2SimuMCA_NoEliLJ", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, "_random_", Delta,  ".RData")
+    file.name <- paste0("./results/", "SimuMCA_NOC_NoEliLJ", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, "_random_", Delta,  ".RData")
     results <- mclapply(1:nsimu, run.fn, mc.cores=40)
     save(results, file=file.name)
     print(post.process.random(results))
