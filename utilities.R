@@ -288,10 +288,11 @@ post.process.onemethod <- function(res, paras){
     rv[5] <- sum((sum(res$DLT.ns)/sum(res$dose.ns))>target)
     rv[6] <- sum(res$DLT.ns)
     rv[7] <- sum(res$dose.ns)
+    rv[8] <- sum(res$MTD==99)
     names(rv) <- c(
         "MTD Sel", "MTD Allo", "Over Sel", 
         "Over Allo", "Risk of HT", "No DLT",
-        "No Subject")
+        "No Subject", "Ear Stop")
     rv
     
 }
@@ -312,6 +313,7 @@ post.process.random <- function(results){
     nsimu <- length(results)
     res.all <- 0
     for (result in results){
+        if (length(result)!=1)
         res.all <- post.process.single(result) + res.all
     }
     res.all.df <- data.frame(res.all)
@@ -321,7 +323,8 @@ post.process.random <- function(results){
                            Over.Sel=Over.Sel/nsimu,
                            Over.Allo=Over.Allo/No.Subject,
                            Risk.of.HT=Risk.of.HT/nsimu,
-                           PerDLT=No.DLT/No.Subject
+                           PerDLT=No.DLT/No.Subject,
+                           Ear.Stop=Ear.Stop/nsimu
     )
     rownames(final.res) <- rownames(res.all.df)
     final.res

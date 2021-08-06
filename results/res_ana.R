@@ -16,9 +16,10 @@ source("utilities.R")
 #load(file.name)
 #print(post.process.random(results))
 
-file.name <- "./results/SimuMCA_NOC_NoEliLJ95_5000_ncohort_16_random_0.15.RData"
+file.name <- "./results/SimuMCA_ABC_NoEliLJ95_1000_ncohort_16_random_0.1.RData"
 load(file.name)
+#print(length(results[[2]]))
 print(post.process.random(results))
-file.name <- "./results/SimuMCA_NoEliLJ95_5000_ncohort_16_random_0.15.RData"
-load(file.name)
-print(post.process.random(results))
+#file.name <- "./results/SimuMCA_NoEliLJ95_5000_ncohort_16_random_0.15.RData"
+#load(file.name)
+#print(post.process.random(results))

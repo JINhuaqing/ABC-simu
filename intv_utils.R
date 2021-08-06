@@ -89,8 +89,8 @@ intv.simu.fn <- function(target, p.true, ncohort, cohortsize, init.level=1, desi
       {
         for(ntox in elim.cv:n) #determine elimination boundary, prior beta(1,1) is used in beta-binomial model
         {
-          alp  <- 1
-          bet <- 1
+          alp  <- 0.5
+          bet <- 0.5
           if(1-pbeta(target, ntox+alp, n-ntox+bet)>cutoff.eli) {elimineed=1; break;}
         }
         if(elimineed==1) { elim = c(elim, ntox); }
@@ -137,8 +137,8 @@ intv.simu.fn <- function(target, p.true, ncohort, cohortsize, init.level=1, desi
     elimi=rep(0, ndose);
     for(i in 1:ndose)
     {
-      alp <- 1
-      bet <- 1
+      alp <- 0.5
+      bet <- 0.5
       if(n[i]>=3) {if(1-pbeta(target, y[i]+alp, n[i]-y[i]+bet)>cutoff.eli) {elimi[i:ndose]=1; break;}}
     }
     
