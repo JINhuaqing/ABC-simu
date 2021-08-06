@@ -40,19 +40,35 @@ gen.prior <- function(K, phi, J=1e3, delta=0.05){
 }
 
 
+# kpidx.fn <- function(pss.prior, tys, tns){
+#     K <- length(tys)
+#     Num <- dim(pss.prior)[1]
+#     dist.fn <- function(i){
+#          ps.gen <- pss.prior[i, ]
+#          tys.gen <- rbinom(K, tns, ps.gen)
+#          data.dist <- sum((tys - tys.gen)**2)
+#          data.dist <= log(sum(tns))
+#     }
+#     kp.idx <- sapply(1:Num, dist.fn)
+#     kp.idx
+# }
+
+# better way to generate psudo-data
 kpidx.fn <- function(pss.prior, tys, tns){
     K <- length(tys)
     Num <- dim(pss.prior)[1]
-    dist.fn <- function(i){
-         ps.gen <- pss.prior[i, ]
-         tys.gen <- rbinom(K, tns, ps.gen)
-         data.dist <- sum((tys - tys.gen)**2)
-         data.dist <= log(sum(tns))
-    }
-    kp.idx <- sapply(1:Num, dist.fn)
+    pss.prior.vec <- as.vector(t(pss.prior))
+    tns.vec <- rep(tns, Num)
+    tys.gen <- rbinom(length(tns.vec), tns.vec, pss.prior.vec)
+    tys.vec <- rep(tys, Num)
+    tns.mat <- matrix(tns.vec, ncol=K, byrow=T)
+    diff.mat <- matrix(tys.vec - tys.gen, ncol=K, byrow=T)
+    # avoid dividing-by-zero problem
+    tns.mat[tns.mat==0] <- 0.1
+    rate.diff.mat <- diff.mat / tns.mat
+    kp.idx <- rowSums(rate.diff.mat**2) <= 0.05
     kp.idx
 }
-
 
 
 
