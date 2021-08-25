@@ -3,7 +3,8 @@ library(magrittr)
 library(parallel)
 
 source("utilities.R")
-source("MCA_utils.R")
+source("MCA_utils_ABC.R")
+#source("MCA_utils.R")
 source("anova_settings.R")
 
 
@@ -50,20 +51,22 @@ mus.list[[3]][[4]] <- c(0.27, 0.42, 0.56, 0.74)
 
 cohortsize <- 3
 flag <- 0
-for (i1 in 1:length(nlevels)){
+for (i1 in 2:length(nlevels)){
     for (i2 in 1:length(deltas)){
         for (i3 in 1:length(sample.sizes)){ # sample size
             for (i4 in 1:length(diff.probs)){
                 for (i5 in 1:length(targets)){
+                    for (i6 in 1:length(hs)){
                     flag <- flag + 1
                     nlevel <- nlevels[i1]
                     delta <- deltas[i2]
                     cur.mu <- mus.list[[i5]][[i1]][i4]
                     sample.size <- sample.sizes[i3]
                     target <- targets[i5]
+                    h <- hs[i6]
                     ncohort <- sample.size/cohortsize
-                    paras <- c(nlevel, cohortsize, cur.mu, sample.size, target, ncohort, delta)
-                    names(paras) <- c("nlevel", "chortesize", "mu", "sample size", "target", "num of cohort", "delta")
+                    paras <- c(nlevel, cohortsize, cur.mu, sample.size, target, ncohort, delta, h)
+                    names(paras) <- c("nlevel", "chortesize", "mu", "sample size", "target", "num of cohort", "delta", "h")
                     print(paras)
 
                     run.fn <- function(k){
@@ -72,13 +75,20 @@ for (i1 in 1:length(nlevels)){
                         p.true <- p.true.all$p.true
                         tmtd <- p.true.all$mtd.level
                         if (delta == 1){
-                            cdelta <- runif(1, 0, 0.2)
+                            cdelta <- round(runif(1, 0, 0.2), 2)
                         }else{
                             cdelta <- delta
                         }
-                        add.args <- list(alp.prior=1, bet.prior=1, J=1000, delta=cdelta, cutoff.eli=0.95, cutoff.num=3)
+                        add.args <- list(alp.prior=0.5, bet.prior=0.5, J=2e4, delta=cdelta, cutoff.eli=0.95, cutoff.num=3, h=h)
 
-                        MCA.res <- MCA.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=1,  add.args=add.args)
+          ps.name <- paste0("./pssprior-ndose-", nlevel, "-phi-", 100*target, "-J-", add.args$J, "-delta-", 100*add.args$delta, ".RData")
+          if (file.exists(ps.name)){
+                  load(ps.name)
+          }else{
+                  pss.prior <- gen.prior(nlevel, phi=target, J=add.args$J, delta=add.args$delta)
+                  save(pss.prior, file=ps.name)
+          }
+                        MCA.res <- MCAABC.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=1,  add.args=add.args)
                     
                     
                         ress <- list(
@@ -94,10 +104,11 @@ for (i1 in 1:length(nlevels)){
                     }
                     
                     
-                    file.name <- paste0("./results/", "AnovaNoEli_Simu_", i1, i2, i3, i4, i5, "_", nsimu, ".RData")
-                    results <- mclapply(1:nsimu, run.fn, mc.cores=40)
+                    file.name <- paste0("./results/", "AnovaNoEli_Simu_", i1, i2, i3, i4, i5, i6, "_", nsimu, ".RData")
+                    results <- mclapply(1:nsimu, run.fn, mc.cores=60)
                     print(post.process.random(results))
                     save(results, file=file.name)
+                  }
                 }
             }
         }

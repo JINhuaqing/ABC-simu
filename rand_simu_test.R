@@ -5,19 +5,20 @@ library(parallel)
 
 source("utilities.R")
 source("CRM_utils.R")
-source("MCA_utils.R")
-source("MCA_utils_ABC.R")
+#source("MCA_utils.R")
 source("intv_utils.R")
+source("MCA_utils_ABC.R")
 
 
-target <- 0.25
-ncohort <- 16
+target <- 0.3
+ncohort <- 10
 cohortsize <- 3
 init.level <- 1
+ndose <- 5
 
-add.args <- list(alp.prior=0.5, bet.prior=0.5, J=1000, delta=0.05, cutoff.eli=0.95, cutoff.num=3)
-add.args2 <- list(alp.prior=0.5, bet.prior=0.5, J=2e4, delta=0.05, cutoff.eli=0.95, cutoff.num=3)
-nsimu <- 1000
+#add.args <- list(alp.prior=0.5, bet.prior=0.5, J=1000, delta=0.05, cutoff.eli=0.95, cutoff.num=3)
+add.args <- list(alp.prior=0.5, bet.prior=0.5, J=2e4, delta=0.10, cutoff.eli=0.95, cutoff.num=3, h=0.01)
+nsimu <- 5000
 seeds <- 1:nsimu
 
 ## Target = 0.3
@@ -43,15 +44,25 @@ seeds <- 1:nsimu
 # dose 8, mu1=mu2=0.58, 0.1
 # dose 8, mu1=mu2=0.77, 0.15
 
+set.seed(1)
+ps.name <- paste0("./pssprior-ndose-", ndose, "-phi-", 100*target, "-J-", add.args$J, "-delta-", 100*add.args$delta, ".RData")
+if (F){
+#if (file.exists(ps.name)){
+        load(ps.name)
+}else{
+        pss.prior <- gen.prior(ndose, phi=target, J=add.args$J, delta=add.args$delta)
+        save(pss.prior, file=ps.name)
+}
+
 mu <- 0.23
 Delta <- 0.05
-mus <- c(0.23, 0.41, 0.58, 0.77)
-#mus <- c(0.23, 0.38, 0.53, 0.71)
+#mus <- c(0.23, 0.41, 0.58, 0.77)
+mus <- c(0.23, 0.38, 0.53, 0.71)
 Deltas <- c(0.05, 0.07, 0.10, 0.15)
-for (jj in 1:3){
+for (jj in 1:4){
     mu <- mus[jj]
     Delta <- Deltas[jj]
-    ndose <- 8
+    ndose <- ndose
     run.fn <- function(k){
         print(k)
         set.seed(seeds[k])
@@ -63,7 +74,7 @@ for (jj in 1:3){
         #MCA.res <- MCA.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
         CRM.res <- CRM.simu.fn(target=target, p.true=p.true, init.level=init.level, cohortsize=cohortsize, ncohort=ncohort, add.args=add.args)
        #(1--CCD, 2--mTPI, 3--BOIN, 4--Keyboard, 5--UMPBI) \n")
-        MCAnew.res <- MCAABC.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args2)
+        MCAnew.res <- MCAABC.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
         
         CCD.res   <- intv.simu.fn(target=target, p.true=p.true, ncohort=ncohort,  cutoff.eli=add.args$cutoff.eli, init.level=init.level, cohortsize=cohortsize, design=1)
         mTPI.res  <- intv.simu.fn(target=target, p.true=p.true, ncohort=ncohort,  cutoff.eli=add.args$cutoff.eli, init.level=init.level, cohortsize=cohortsize, design=2)
@@ -90,8 +101,8 @@ for (jj in 1:3){
     }
     
     
-    file.name <- paste0("./results/", "SimuMCA_ABC_NoEliLJ", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, "_random_", Delta,  ".RData")
-    results <- mclapply(1:nsimu, run.fn, mc.cores=70)
+    file.name <- paste0("./results/", "SimuMCA_ABC_NoEliLJ", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, "_random_", Delta,  "_priorDelta_", 100*add.args$delta, ".RData")
+    results <- mclapply(1:nsimu, run.fn, mc.cores=50)
     save(results, file=file.name)
     print(post.process.random(results))
 }

@@ -1,5 +1,3 @@
-# MCA2.simu.fn is the method we use in the paper
-
 #setwd("C:/Users/Dell/Documents/ProjectCode/phaseI/Rcode")
 #setwd("/Users/jinhuaqing/Documents/Projects_Code/phaseI/Rcode")
 #setwd("C:/Users/JINHU/Documents/ProjectCode/MCA")
@@ -7,20 +5,24 @@ source("utilities.R")
 library(magrittr)
 library(BOIN)
 library(arrApply)
+library(spatstat)
 
 
 gen.u.rand <- function(k, K=5, phi=0.3, delta=0.1){
     #cps <- c(phi)
-    if (k > 0) {
-        cps <- c(runif(1, phi-delta, phi+delta))
+    if (k==(K+1)){
+            cps <- runif(K, 0, max=phi-1*delta)
+    }else if (k > 0) {
+        cps <- c(runif(1, phi-1*delta, phi+1*delta))
+        #cps <- c(phi)
         if (k > 1){
-            cps <- c(cps, runif(k-1, min=0, max=phi-delta))
+            cps <- c(cps, runif(k-1, min=0, max=phi-1*delta))
         }
         if (k < K){
-            cps <- c(cps, runif(K-k, min=phi+delta, 1))
+            cps <- c(cps, runif(K-k, min=phi+1*delta, max=2*phi))
         }
-    }else{
-            cps <- runif(K, min=phi+delta, 1)
+    }else if (k==0){
+            cps <- runif(K, min=phi+1*delta, max=2*phi)
     }
     sort(cps)
 }
@@ -33,9 +35,9 @@ gen.mu.rand <- function(k, J, K=5, phi=0.3, delta=0.1){
 }
 
 gen.prior <- function(K, phi, J=1e3, delta=0.05){
-    pss <- lapply(0:K, function(k)gen.mu.rand(k, J=J, K=K, phi=phi, delta=delta))
-    #pss.prior <- t(apply(matrix(runif(K*J), ncol=K), 1, sort))
+    pss <- lapply(0:K, function(k)gen.mu.rand(k, J=J*(1+as.numeric(k==-1)), K=K, phi=phi, delta=delta))
     pss.prior <- do.call(rbind, pss)
+    #pss.prior <- t(apply(matrix(runif(K*J, 0, 2*phi), ncol=K), 1, sort))
     pss.prior
 }
 
@@ -67,7 +69,25 @@ kpidx.fn <- function(pss.prior, tys, tns){
     tns.mat[tns.mat==0] <- 0.1
     rate.diff.mat <- diff.mat / tns.mat
     kp.idx <- rowSums(rate.diff.mat**2) <= 0.05
+    #print(mean(kp.idx))
     kp.idx
+}
+
+kpws.fn <- function(pss.prior, tys, tns, h=0.01){
+    K <- length(tys)
+    Num <- dim(pss.prior)[1]
+    pss.prior.vec <- as.vector(t(pss.prior))
+    tns.vec <- rep(tns, Num)
+    tys.gen <- rbinom(length(tns.vec), tns.vec, pss.prior.vec)
+    tys.vec <- rep(tys, Num)
+    tns.mat <- matrix(tns.vec, ncol=K, byrow=T)
+    diff.mat <- matrix(tys.vec - tys.gen, ncol=K, byrow=T)
+    tns.mat[tns.mat==0] <- 0.1
+    rate.diff.mat <- diff.mat / tns.mat
+    if (is.null(h))
+        h <- 0.01
+    ws <- exp(-rowSums(rate.diff.mat**2)/h)# kernel fn exp(-x^2/h), rigirously, it should be exp(-x^2/2/h^2)
+    ws 
 }
 
 
@@ -88,7 +108,13 @@ MCAABC.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     tys <- rep(0, ndose) # number of responses for different doses.
     tns <- rep(0, ndose) # number of subject for different doses.
     tover.doses <- rep(0, ndose) # Whether each dose is overdosed or not, 1 yes
-    pss.prior <- gen.prior(ndose, phi=phi, J=add.args$J, delta=add.args$delta)
+    ps.name <- paste0("./pssprior-ndose-", ndose, "-phi-", 100*phi, "-J-", add.args$J, "-delta-", 100*add.args$delta, ".RData")
+    if (file.exists(ps.name)){
+        load(ps.name)
+    }else{
+        pss.prior <- gen.prior(ndose, phi=phi, J=add.args$J, delta=add.args$delta)
+        save(pss.prior, file=ps.name)
+    }
 
     
     
@@ -111,39 +137,39 @@ MCAABC.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
         
         add.args <- c(list(y=cy, n=cn, tys=tys, tns=tns, cidx=cidx), add.args)
         
-        # if (overdose.fn(phi, add.args)){
-        #     tover.doses[cidx:ndose] <- 1
-        # }
-        # 
-        # if (tover.doses[1] == 1){
+          if (overdose.fn(phi, add.args)){
+               tover.doses[cidx:ndose] <- 1
+          }
+           
+          if (tover.doses[1] == 1){
+              earlystop <- 1
+               break()
+           }
+        
+        sel.cMTD.fn <- function(phi, pss.prior, kp.ws){
+
+           ndose <- dim(pss.prior)[2]
+            
+           #post.ms <- sapply(1:ndose, function(i)weighted.mean(pss.prior[, i], w=kp.ws))
+           post.ms <- sapply(1:ndose, function(i)weighted.median(pss.prior[, i], w=kp.ws))
+           cMTD <- which.min(abs(post.ms-phi))
+           cMTD
+
+        }
+        
+
+        kp.ws <- kpws.fn(pss.prior, tys, tns, h=add.args$h)
+             
+        #post.sps <- pss.prior[kp.idx, ]
+        # over.prob <- mean(post.sps[, 1]>phi)
+        # if (over.prob >= 0.75){
         #     earlystop <- 1
         #     break()
         # }
-        
-        
 
-        kp.idx <- kpidx.fn(pss.prior, tys, tns)
-        post.sps <- pss.prior[kp.idx, ]
-        over.prob <- mean(post.sps[, 1]>phi)
-        if (over.prob >= 0.90){
-            earlystop <- 1
-            break()
-        }
 
-        cor.ps <- c()
-        for (j in 1:ndose){
-            c.sps <- post.sps[, j]
-            sps.idx <- (c.sps >= phi - 1.5*add.args$delta) & (c.sps <= phi+add.args$delta)
-            cor.ps[j] <- mean(sps.idx)
-        
-        }
+        cMTD <- sel.cMTD.fn(phi, pss.prior, kp.ws)
 
-        #print(tns)
-        #print(post.ms)
-        cMTD <- which.max(cor.ps)
-
-        #post.ms <- colMeans(post.sps)
-        #cMTD <- which.min(abs(post.ms-phi))
         if (cidx > cMTD){
             cidx <- cidx - 1
         }else if (cidx == cMTD){
@@ -157,7 +183,6 @@ MCAABC.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     
     
     if (earlystop==0){
-        #MTD <- select.mtd(phi, tns, tys, cutoff.eli=2)$MTD
         MTD <- cMTD
     }else{
         MTD <- 99
@@ -165,12 +190,3 @@ MCAABC.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     list(MTD=MTD, dose.ns=tns, DLT.ns=tys, p.true=p.true, target=phi)
 }
 
-# target <- 0.30
-# ncohort <- 10
-# cohortsize <- 3
-# init.level <- 1
-# p.true <- c(0.1, 0.2, 0.30, 0.4, 0.5)
-# print(p.true)
-# add.args2 <- list(alp.prior=0.5, bet.prior=0.5, J=1e4, delta=0.05, cutoff.eli=0.95, cutoff.num=3)
-# 
-# MCAnew.res <- MCAABC.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args2)
