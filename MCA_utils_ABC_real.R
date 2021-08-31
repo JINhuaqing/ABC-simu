@@ -1,6 +1,3 @@
-#setwd("C:/Users/Dell/Documents/ProjectCode/phaseI/Rcode")
-#setwd("/Users/jinhuaqing/Documents/Projects_Code/phaseI/Rcode")
-#setwd("C:/Users/JINHU/Documents/ProjectCode/MCA")
 source("utilities.R")
 library(magrittr)
 library(BOIN)
@@ -42,36 +39,6 @@ gen.prior <- function(K, phi, J=1e3, delta=0.05){
 }
 
 
-# kpidx.fn <- function(pss.prior, tys, tns){
-#     K <- length(tys)
-#     Num <- dim(pss.prior)[1]
-#     dist.fn <- function(i){
-#          ps.gen <- pss.prior[i, ]
-#          tys.gen <- rbinom(K, tns, ps.gen)
-#          data.dist <- sum((tys - tys.gen)**2)
-#          data.dist <= log(sum(tns))
-#     }
-#     kp.idx <- sapply(1:Num, dist.fn)
-#     kp.idx
-# }
-
-# better way to generate psudo-data
-kpidx.fn <- function(pss.prior, tys, tns){
-    K <- length(tys)
-    Num <- dim(pss.prior)[1]
-    pss.prior.vec <- as.vector(t(pss.prior))
-    tns.vec <- rep(tns, Num)
-    tys.gen <- rbinom(length(tns.vec), tns.vec, pss.prior.vec)
-    tys.vec <- rep(tys, Num)
-    tns.mat <- matrix(tns.vec, ncol=K, byrow=T)
-    diff.mat <- matrix(tys.vec - tys.gen, ncol=K, byrow=T)
-    # avoid dividing-by-zero problem
-    tns.mat[tns.mat==0] <- 0.1
-    rate.diff.mat <- diff.mat / tns.mat
-    kp.idx <- rowSums(rate.diff.mat**2) <= 0.05
-    #print(mean(kp.idx))
-    kp.idx
-}
 
 kpws.fn <- function(pss.prior, tys, tns, h=0.01){
     K <- length(tys)
@@ -93,7 +60,7 @@ kpws.fn <- function(pss.prior, tys, tns, h=0.01){
 
 
 # Simulation function for MCA
-MCAABC.simu.fn <- function(phi, p.true, ncohort=12, init.level=1, 
+MCAABCreal.simu.fn <- function(phi, p.true, ncohort=12, init.level=1, 
                               cohortsize=1, add.args=list()){
     # phi: Target DIL rate
     # p.true: True DIL rates under the different dose levels
@@ -101,6 +68,11 @@ MCAABC.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     # cohortsize: The sample size in each cohort
     # alp.prior, bet.prior: prior parameters
     #set.seed(2)
+    tk.idxs <- c()
+    tk.dlts <- c()
+    tk.over <- c()
+    tk.pkss <- list()
+
     earlystop <- 0
     ndose <- length(p.true)
     cidx <- init.level
@@ -122,6 +94,8 @@ MCAABC.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     
     for (i in 1:ncohort){
         pc <- p.true[cidx] 
+        if (i == ncohort)
+            cohortsize <- 1
         
         # sample from current dose
         cres <- rbinom(cohortsize, 1, pc)
@@ -145,20 +119,25 @@ MCAABC.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
               earlystop <- 1
                break()
            }
+        tk.idxs <- c(tk.idxs, cidx)
+        tk.dlts <- c(tk.dlts, sum(cres))
+        tk.over <- c(tk.over, mean(overdose.fn(phi, add.args)))
         
         sel.cMTD.fn <- function(phi, pss.prior, kp.ws){
 
            ndose <- dim(pss.prior)[2]
            post.ms <- sapply(1:ndose, function(i)weighted.median(pss.prior[, i], w=kp.ws))
            cMTD <- which.min(abs(post.ms-phi))
-           cMTD
+           list(cMTD=cMTD, eps=post.ms)
 
         }
         
 
         kp.ws <- kpws.fn(pss.prior, tys, tns, h=add.args$h)
              
-        cMTD <- sel.cMTD.fn(phi, pss.prior, kp.ws)
+        cRes <- sel.cMTD.fn(phi, pss.prior, kp.ws)
+        cMTD <- cRes$cMTD
+        tk.pkss[[i]] <- cRes$eps
 
         if (cidx > cMTD){
             cidx <- cidx - 1
@@ -177,6 +156,6 @@ MCAABC.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     }else{
         MTD <- 99
     }
-    list(MTD=MTD, dose.ns=tns, DLT.ns=tys, p.true=p.true, target=phi)
+    list(MTD=MTD, dose.ns=tns, DLT.ns=tys, p.true=p.true, target=phi, over.doses=tover.doses, tk.over=tk.over, tk.dlts=tk.dlts, tk.idxs=tk.idxs, tk.pkss=tk.pkss)
 }
 

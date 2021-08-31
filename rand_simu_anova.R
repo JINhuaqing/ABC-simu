@@ -51,9 +51,9 @@ mus.list[[3]][[4]] <- c(0.27, 0.42, 0.56, 0.74)
 
 cohortsize <- 3
 flag <- 0
-for (i1 in 2:length(nlevels)){
-    for (i2 in 1:length(deltas)){
-        for (i3 in 1:length(sample.sizes)){ # sample size
+for (i1 in 3:length(nlevels)){
+    for (i2 in 5:length(deltas)){
+        for (i3 in 9:length(sample.sizes)){ # sample size
             for (i4 in 1:length(diff.probs)){
                 for (i5 in 1:length(targets)){
                     for (i6 in 1:length(hs)){

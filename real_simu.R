@@ -5,7 +5,7 @@ library(parallel)
 
 source("utilities.R")
 source("CRM_log2_utils.R")
-source("MCA_utils_real.R")
+source("MCA_utils_ABC_real.R")
 
 
 target <- 0.25
@@ -15,7 +15,7 @@ init.level <- 1
 nsimu <- 5000
 seeds <- 1:nsimu
 
-add.args <- list(alp.prior=1, bet.prior=1, J=10000, delta=0.10, cutoff.eli=0.95, cutoff.num=3)
+add.args <- list(alp.prior=0.5, bet.prior=0.5, J=20000, delta=0.10, cutoff.eli=0.95, cutoff.num=3, h=0.01)
 p.trues <- list()
 yns <- c(24, 10, 3)
 tns <- c(3, 4, 2)
@@ -32,10 +32,10 @@ tmtd <- MTD.level(target, p.true)
 run.fn <- function(i){
     print(i)
     set.seed(seeds[i])
-    MCA.res <- MCA.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
+    MCA.res <- MCAABC.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
     CRM.res <- CRM.log2.simu.fn(target=target, p.true=p.true, init.level=init.level, cohortsize=cohortsize, ncohort=ncohort, add.args=add.args)
     ress <- list(
-                 MCA = MCA.res,
+                 MCAnew = MCA.res,
                  CRM = CRM.res, 
                  paras=list(p.true=p.true, 
                              mtd=tmtd, 
@@ -48,8 +48,8 @@ run.fn <- function(i){
     
 }
 
-ncores <- 50
-m.names <- c("MCA", "CRM")
+ncores <- 80
+m.names <- c("MCAnew", "CRM")
 results <- mclapply(1:nsimu, run.fn, mc.cores=ncores)
 file.name <- paste0("./results/", "RealDataMCA_NoELiLJ", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, ".RData")
 save(results, file=file.name)

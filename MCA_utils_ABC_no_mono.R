@@ -8,7 +8,7 @@ library(arrApply)
 library(spatstat)
 
 
-gen.u.rand <- function(k, K=5, phi=0.3, delta=0.1){
+gen.u.rand.no <- function(k, K=5, phi=0.3, delta=0.1){
     #cps <- c(phi)
     if (k==(K+1)){
             cps <- runif(K, 0, max=phi-1*delta)
@@ -24,18 +24,18 @@ gen.u.rand <- function(k, K=5, phi=0.3, delta=0.1){
     }else if (k==0){
             cps <- runif(K, min=phi+1*delta, max=2*phi)
     }
-    sort(cps)
+    cps
 }
 
 # generate the scenarios for Pr(Yn|M_n, Ak)
-gen.mu.rand <- function(k, J, K=5, phi=0.3, delta=0.1){
-    pss <- lapply(1:J, function(i)gen.u.rand(k, K, phi, delta))
+gen.mu.rand.no <- function(k, J, K=5, phi=0.3, delta=0.1){
+    pss <- lapply(1:J, function(i)gen.u.rand.no(k, K, phi, delta))
     pssMat <- do.call(rbind, pss)
     pssMat
 }
 
-gen.prior <- function(K, phi, J=1e3, delta=0.05){
-    pss <- lapply(0:K, function(k)gen.mu.rand(k, J=J*(1+as.numeric(k==-1)), K=K, phi=phi, delta=delta))
+gen.prior.no <- function(K, phi, J=1e3, delta=0.05){
+    pss <- lapply(0:K, function(k)gen.mu.rand.no(k, J=J*(1+as.numeric(k==-1)), K=K, phi=phi, delta=delta))
     pss.prior <- do.call(rbind, pss)
     #pss.prior <- t(apply(matrix(runif(K*J, 0, 2*phi), ncol=K), 1, sort))
     pss.prior
@@ -93,7 +93,7 @@ kpws.fn <- function(pss.prior, tys, tns, h=0.01){
 
 
 # Simulation function for MCA
-MCAABC.simu.fn <- function(phi, p.true, ncohort=12, init.level=1, 
+MCAABCno.simu.fn <- function(phi, p.true, ncohort=12, init.level=1, 
                               cohortsize=1, add.args=list()){
     # phi: Target DIL rate
     # p.true: True DIL rates under the different dose levels
@@ -108,11 +108,11 @@ MCAABC.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
     tys <- rep(0, ndose) # number of responses for different doses.
     tns <- rep(0, ndose) # number of subject for different doses.
     tover.doses <- rep(0, ndose) # Whether each dose is overdosed or not, 1 yes
-    ps.name <- paste0("./pssprior-ndose-", ndose, "-phi-", 100*phi, "-J-", add.args$J, "-delta-", 100*add.args$delta, ".RData")
+    ps.name <- paste0("./pssprior-ndose-no-mono-", ndose, "-phi-", 100*phi, "-J-", add.args$J, "-delta-", 100*add.args$delta, ".RData")
     if (file.exists(ps.name)){
         load(ps.name)
     }else{
-        pss.prior <- gen.prior(ndose, phi=phi, J=add.args$J, delta=add.args$delta)
+        pss.prior <- gen.prior.no(ndose, phi=phi, J=add.args$J, delta=add.args$delta)
         save(pss.prior, file=ps.name)
     }
 
