@@ -15,6 +15,10 @@ source("utilities.R")
 #file.name <- paste0("./results/", "Simu25", 100*cutoff.eli, "_", nsimu, "_ncohort_", ncohort, "_random_", Delta,  ".RData")
 #load(file.name)
 #print(post.process.random(results))
+file.name <- "./results/SimuC195_5000_ncohort_30_random_0.15.RData"
+load(file.name)
+print(post.process.random(results))
+fads
 
 
 file.name <- "./results/SimuMCA_ABC_NoEliLJ95_5000_ncohort_10_random_0.05_priorDelta_10.RData"
