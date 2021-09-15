@@ -1,6 +1,6 @@
-setwd("C:/Users/JINHU/Documents/ProjectCode/MCA")
+setwd("C:/Users/JINHU/Documents/ProjectCode/ABC-simu")
 source("utilities.R")
-source("MCA_utils_ABC_real.R")
+source("ABC_utils_real.R")
 
 
 # the results for 5000 repititions
