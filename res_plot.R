@@ -1,10 +1,10 @@
 rm(list=ls())
 library(ggplot2)
-setwd("C:/Users/JINHU/Documents/ProjectCode/MCA")
+setwd("C:/Users/JINHU/OneDrive - connect.hku.hk/文档/ProjectCode/ABC-simu")
 #setwd("/Users/jinhuaqing/Documents/Projects_Code/phaseI/")
 source("utilities.R")
 
-fils <- dir("results/", pattern="SimuMCA.+10_random.+07_prior");fils
+fils <- dir("results/", pattern="SimuMCA.+10_random.+07_prior.*10.R");fils
 
 fil <- paste0("results/", fils[1]);fil
 load(fil)
@@ -15,8 +15,37 @@ grp.names <- c("MTD selection", "MTD allocation", "Overdose selection", "Overdos
 #               , "Risk of high toxicity",  "Average DLT rate")
 m.names <- c("ABC", "BOIN", "CCD", "CRM", "Keyboard", "mTPI", "UMPBI")
 
-g.var <- rep(grp.names, times=length(m.names))
-m.var <- rep(m.names, each=4)
+
+# Bootstrap CI
+numRep <- 1000
+bootFil <-  paste0(strsplit(fil, ".R", T)[[1]][1], "_Boot", numRep, ".RData");bootFil
+if (!file.exists(bootFil)){
+    nSimu <- length(results)
+    resList <- list()
+    for (ix in 1:numRep){
+        print(ix)
+        idxs <- sample.int(nSimu, nSimu, T)
+        resultsNew <- results[idxs]
+        tbNew <- post.process.random(resultsNew)
+        resList[[ix]] <- tbNew
+    }
+    nams <- names(tbNew)[1:4]
+    CIsList <- list()
+    CIsDiffList <- list()
+    for (nam in nams){
+        bt.sps <- do.call(cbind, lapply(resList, function(x)x[nam]))
+        CIs <- apply(bt.sps, 1, function(x)quantile(x, c(0.025, 0.975)))
+        CIs.diff <- apply(bt.sps, 1, function(x)c(-1.96*sd(x), 1.96*sd(x)))
+        CIsList[[nam]] <- CIs
+        CIsDiffList[[nam]] <- CIs.diff
+    }
+
+    save(CIsList, CIsDiffList, file=bootFil)
+    
+}
+load(bootFil)
+
+tb.names <- c("MCAnew", "BOIN", "CCD", "CRM", "keyB", "mTPI", "UMPBI")
 
 tb <- post.process.random(results);tb
 tb <- tb[, 1:4]
@@ -28,9 +57,25 @@ v.var <- c(as.vector(unlist(tb["MCAnew", ])),
            as.vector(unlist(tb["mTPI", ])), 
            as.vector(unlist(tb["UMPBI", ]))
            ) * 100
+g.var <- rep(grp.names, times=length(m.names))
+m.var <- rep(m.names, each=4)
 
-data <- data.frame(g=factor(g.var, levels=grp.names), m=factor(m.var, levels=m.names), v=v.var)
-ggplot(data = data, mapping = aes(x = g, y = v, fill = m)) + geom_bar(stat = 'identity', position = 'dodge') + ylim(c(0, 75)) + 
+#lws <- as.vector(do.call(rbind, lapply(CIsList, function(x)x[1, ]))) * 100
+#ups <- as.vector(do.call(rbind, lapply(CIsList, function(x)x[2, ]))) * 100
+
+lws <- v.var + as.vector(do.call(rbind, lapply(CIsDiffList, function(x)x[1, ]))) * 100
+ups <- v.var + as.vector(do.call(rbind, lapply(CIsDiffList, function(x)x[2, ]))) * 100
+
+ggplot(aes(x=pollutant, y=value, fill = pollutant)) + 
+    geom_bar(position=position_dodge(0.95), stat="identity") + 
+    geom_errorbar(aes(ymax=value + ci, ymin=value-ci), position = position_dodge(0.95), width = 0.25) +
+    facet_grid(. ~ id) +
+    guides(fill=FALSE)
+
+data <- data.frame(g=factor(g.var, levels=grp.names), m=factor(m.var, levels=m.names), v=v.var, vl=lws, vu=ups)
+ggplot(data = data, mapping = aes(x = g, y = v, fill = m)) + 
+    geom_bar(stat = 'identity', position = position_dodge(0.9)) + ylim(c(0, 75)) + 
+    geom_errorbar(aes(ymax=vu, ymin=vl), position = position_dodge(0.9), width = 0.5) +
     theme(legend.position = c(0.90, 0.7) , plot.title = element_text(hjust=0.5)
           #axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=0.5)
           ) +  xlab("") + ylab("Percentage (%)") + 
