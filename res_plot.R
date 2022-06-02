@@ -4,9 +4,8 @@ setwd("C:/Users/JINHU/OneDrive - connect.hku.hk/文档/ProjectCode/ABC-simu")
 #setwd("/Users/jinhuaqing/Documents/Projects_Code/phaseI/")
 source("utilities.R")
 
-fils <- dir("results/", pattern="SimuMCA.+10_random.+07_prior.*10.R");fils
-
-fil <- paste0("results/", fils[1]);fil
+fils <- dir("results/", pattern="SimuMCA.+10_random.*20.RData", full.names=T);fils
+for (fil in fils){
 load(fil)
 
 grp.names <- c("MTD selection", "MTD allocation", "Overdose selection", "Overdose allocation")
@@ -66,11 +65,6 @@ m.var <- rep(m.names, each=4)
 lws <- v.var + as.vector(do.call(rbind, lapply(CIsDiffList, function(x)x[1, ]))) * 100
 ups <- v.var + as.vector(do.call(rbind, lapply(CIsDiffList, function(x)x[2, ]))) * 100
 
-ggplot(aes(x=pollutant, y=value, fill = pollutant)) + 
-    geom_bar(position=position_dodge(0.95), stat="identity") + 
-    geom_errorbar(aes(ymax=value + ci, ymin=value-ci), position = position_dodge(0.95), width = 0.25) +
-    facet_grid(. ~ id) +
-    guides(fill=FALSE)
 
 data <- data.frame(g=factor(g.var, levels=grp.names), m=factor(m.var, levels=m.names), v=v.var, vl=lws, vu=ups)
 ggplot(data = data, mapping = aes(x = g, y = v, fill = m)) + 
@@ -82,4 +76,8 @@ ggplot(data = data, mapping = aes(x = g, y = v, fill = m)) +
     guides(fill=guide_legend(title='Methods')) 
     #ggtitle("Average probability difference around the target = 0.05")
     
-ggsave("plots/ABC_random_c16_07.jpg", width=5, height = 4.5, units="in")
+figPath <- paste0("plots/", strsplit(strsplit(fil, "/", T)[[1]][2], ".R", T)[[1]][1], ".jpg");figPath
+ggsave(figPath, width=5, height = 4.5, units="in")
+
+    
+}
