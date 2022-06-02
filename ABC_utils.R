@@ -90,6 +90,22 @@ kpws.fn <- function(pss.prior, tys, tns, h=0.01){
     ws 
 }
 
+# take weighted mode
+weighted.mode <- function(vs, ws){
+    #vs: the values
+    #ws: the weights
+    bins <- seq(min(vs), max(vs), length.out=100)
+    binWs <- c()
+    for (ix in 1:(length(bins)-1)){
+        binWs <- c(binWs, sum(ws[vs>=bins[ix] & vs<bins[ix+1]]))
+    }
+    mIdx <- which.max(binWs)
+    w.mode <- (bins[mIdx]+bins[mIdx+1])/2
+    return(w.mode)
+}
+
+
+
 
 
 # Simulation function for MCA
