@@ -4,8 +4,6 @@ library(magrittr)
 library(parallel)
 
 source("utilities.R")
-source("CRM_utils.R")
-source("intv_utils.R")
 source("ABC_utils.R")
 
 
@@ -18,7 +16,9 @@ init.level <- 1
 ndose <- 5
 
 #add.args <- list(alp.prior=0.5, bet.prior=0.5, J=1000, delta=0.05, cutoff.eli=0.95, cutoff.num=3)
-add.args <- list(alp.prior=0.5, bet.prior=0.5, J=2e4, delta=0.10, cutoff.eli=0.95, cutoff.num=3, h=0.01)
+add.args <- list(alp.prior=0.5, bet.prior=0.5, J=2e4, delta=0.10, cutoff.eli=0.95, cutoff.num=3, h=0.01, type="median")
+add.args.mean <- list(alp.prior=0.5, bet.prior=0.5, J=2e4, delta=0.10, cutoff.eli=0.95, cutoff.num=3, h=0.01, type="mean")
+add.args.mode <- list(alp.prior=0.5, bet.prior=0.5, J=2e4, delta=0.10, cutoff.eli=0.95, cutoff.num=3, h=0.01, type="mode")
 nsimu <- 5000
 seeds <- 1:nsimu
 
@@ -48,7 +48,7 @@ if (F){
 mu <- 0.23
 Delta <- 0.05
 Deltas <- c(0.05, 0.07, 0.10, 0.15)
-for (jj in 1:4){
+for (jj in 3){
     mu <- mus[jj]
     Delta <- Deltas[jj]
     ndose <- ndose
@@ -60,23 +60,15 @@ for (jj in 1:4){
         tmtd <- p.true.all$mtd.level
         #print(p.true)
     
-        CRM.res <- CRM.simu.fn(target=target, p.true=p.true, init.level=init.level, cohortsize=cohortsize, ncohort=ncohort, add.args=add.args)
        #(1--CCD, 2--mTPI, 3--BOIN, 4--Keyboard, 5--UMPBI) \n")
-        MCAnew.res <- MCAABC.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
+        Median.res <- MCAABC.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args)
+        Mean.res <- MCAABC.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args.mean)
+        Mode.res <- MCAABC.simu.fn(target, p.true, ncohort=ncohort, cohortsize=cohortsize, init.level=init.level,  add.args=add.args.mode)
         
-        CCD.res   <- intv.simu.fn(target=target, p.true=p.true, ncohort=ncohort,  cutoff.eli=add.args$cutoff.eli, init.level=init.level, cohortsize=cohortsize, design=1)
-        mTPI.res  <- intv.simu.fn(target=target, p.true=p.true, ncohort=ncohort,  cutoff.eli=add.args$cutoff.eli, init.level=init.level, cohortsize=cohortsize, design=2)
-        BOIN.res  <- intv.simu.fn(target=target, p.true=p.true, ncohort=ncohort,  cutoff.eli=add.args$cutoff.eli, init.level=init.level, cohortsize=cohortsize, design=3)
-        keyB.res  <- intv.simu.fn(target=target, p.true=p.true, ncohort=ncohort,  cutoff.eli=add.args$cutoff.eli, init.level=init.level, cohortsize=cohortsize, design=4)
-        UMPBI.res <- intv.simu.fn(target=target, p.true=p.true, ncohort=ncohort,  cutoff.eli=add.args$cutoff.eli, init.level=init.level, cohortsize=cohortsize, design=5)
         ress <- list(
-                     MCAnew = MCAnew.res,
-                     BOIN = BOIN.res, 
-                     CCD = CCD.res, 
-                     keyB = keyB.res, 
-                     mTPI= mTPI.res, 
-                     UMPBI= UMPBI.res, 
-                     CRM = CRM.res, 
+                     median = Median.res,
+                     mean = Mean.res,
+                     mode = Mode.res,
                      paras=list(p.true=p.true, 
                                  mtd=tmtd, 
                                  add.args=add.args,
@@ -88,7 +80,7 @@ for (jj in 1:4){
     }
     
     
-    file.name <- paste0("./results/", "SimuMCA_ABC_NoEliLJ", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, "_random_", Delta,  "_priorDelta_", 100*add.args$delta, "_target_", 100*target, ".RData")
+    file.name <- paste0("./results/", "SimuMCA_mmmABC_NoEliLJ", 100*add.args$cutoff.eli, "_", nsimu, "_ncohort_", ncohort, "_random_", Delta,  "_priorDelta_", 100*add.args$delta, "_target_", 100*target, ".RData")
     print(file.name)
     results <- mclapply(1:nsimu, run.fn, mc.cores=10)
     save(results, file=file.name)

@@ -165,7 +165,17 @@ MCAABC.simu.fn <- function(phi, p.true, ncohort=12, init.level=1,
         sel.cMTD.fn <- function(phi, pss.prior, kp.ws){
 
            ndose <- dim(pss.prior)[2]
-           post.ms <- sapply(1:ndose, function(i)weighted.median(pss.prior[, i], w=kp.ws))
+           if (is.null(add.args$type)){
+               add.args$type <- "median"
+           }
+           if (add.args$type == "median"){
+               post.ms <- sapply(1:ndose, function(i)weighted.median(pss.prior[, i], w=kp.ws))
+           }else if (add.args$type == "mean") {
+               post.ms <- sapply(1:ndose, function(i)weighted.mean(pss.prior[, i], w=kp.ws))
+           }else if (add.args$type == "mode") {
+               post.ms <- sapply(1:ndose, function(i)weighted.mode(pss.prior[, i], w=kp.ws))
+           }
+
            cMTD <- which.min(abs(post.ms-phi))
            cMTD
 
