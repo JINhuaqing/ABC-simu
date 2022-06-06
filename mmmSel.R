@@ -1,4 +1,5 @@
 rm(list=ls())
+setwd("C:/Users/JINHU/OneDrive - connect.hku.hk/文档/ProjectCode/ABC-simu")
 source("ABC_utils.R")
 
 
@@ -14,7 +15,7 @@ idx <- 3
 vs <- pss.prior[, idx]
 kde <- density(vs, weights=nws)
 jpeg("./plots/wSpSKDE.jpg", width=6, height=6, unit="in", res=500)
-plot(kde, main="Density of weighted samples at dose level 2", xlab = "")
+plot(kde, main="Density function of weighted samples", xlab = "")
 dev.off()
 
 weighted.mean(vs, nws)
